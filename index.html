@@ -1,0 +1,2670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PARALLEL WORLDS: 12 PIXEL DIMENSIONS</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #06060c;
+    --neon-blue: #00f0ff;
+    --neon-pink: #ff0055;
+    --neon-gold: #ffd700;
+    --neon-green: #39ff14;
+    --neon-purple: #b026ff;
+    --neon-crimson: #ff1133;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body {
+    background-color: var(--bg-dark);
+    font-family: 'Press Start 2P', monospace;
+    color: #fff;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  #game-wrapper {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    max-width: 960px;
+    max-height: 600px;
+    background: #000;
+    box-shadow: 0 0 40px rgba(0, 240, 255, 0.25);
+    border: 3px solid #1a1a2e;
+    overflow: hidden;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* CRT Scanline Filter Overlay */
+  #crt-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    z-index: 35;
+    opacity: 0.6;
+  }
+
+  /* HUD */
+  #ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px 14px;
+    z-index: 40;
+  }
+
+  .hud-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 9px;
+    background: rgba(6, 6, 14, 0.88);
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.15);
+    text-shadow: 1px 1px 0 #000;
+    backdrop-filter: blur(4px);
+  }
+
+  .hud-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .hud-btn {
+    pointer-events: auto;
+    background: #141424;
+    color: #fff;
+    border: 1px solid #555;
+    padding: 4px 8px;
+    font-family: inherit;
+    font-size: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .hud-btn:hover { background: #333; border-color: var(--neon-blue); }
+
+  /* Ability Cooldown Bar */
+  #ability-status-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(8, 8, 16, 0.85);
+    padding: 5px 9px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    font-size: 8px;
+    margin-top: 4px;
+    width: fit-content;
+    align-self: flex-start;
+  }
+  #ability-cd-fill {
+    width: 80px;
+    height: 6px;
+    background: #222;
+    border: 1px solid #555;
+    position: relative;
+    overflow: hidden;
+  }
+  #ability-cd-bar {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+    transition: width 0.1s linear;
+  }
+
+  /* Compass Bar */
+  #compass-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    pointer-events: none;
+    margin-top: 4px;
+  }
+  #compass-text {
+    font-size: 8px;
+    color: var(--neon-gold);
+    text-shadow: 1px 1px 0 #000;
+  }
+  #compass-track {
+    width: 230px;
+    height: 6px;
+    background: rgba(0,0,0,0.65);
+    border: 1px solid #555;
+    border-radius: 3px;
+    position: relative;
+  }
+  #compass-marker {
+    position: absolute;
+    top: -3px;
+    left: 0%;
+    width: 10px;
+    height: 10px;
+    background: var(--neon-blue);
+    border: 1px solid #fff;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 6px var(--neon-blue);
+  }
+
+  /* Boss Health UI */
+  #boss-health-container {
+    align-self: center;
+    width: 340px;
+    background: rgba(6, 6, 12, 0.9);
+    border: 2px solid #fff;
+    padding: 6px;
+    border-radius: 4px;
+    display: none;
+    box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+    margin-top: 6px;
+  }
+  #boss-name-label {
+    font-size: 8px;
+    margin-bottom: 4px;
+    text-align: center;
+    color: var(--neon-gold);
+    letter-spacing: 1px;
+  }
+  .health-track {
+    width: 100%;
+    height: 10px;
+    background: #1a1a24;
+    border: 1px solid #444;
+    overflow: hidden;
+  }
+  #boss-health-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #ff0055, #ffaa00);
+    transition: width 0.15s ease-out;
+  }
+  #boss2-health-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #00f0ff, #b026ff);
+    margin-top: 3px;
+    display: none;
+  }
+
+  /* Touch Controls */
+  #touch-controls {
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    width: 100%;
+    padding: 0 16px;
+    display: none;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .touch-group {
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
+  }
+  .touch-btn {
+    width: 54px;
+    height: 54px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    touch-action: manipulation;
+  }
+  .touch-btn:active {
+    background: rgba(0, 240, 255, 0.5);
+    border-color: #fff;
+    transform: scale(0.94);
+  }
+  .touch-ability {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: var(--neon-gold);
+    font-size: 9px;
+    display: none;
+  }
+
+  /* Screen Overlays */
+  .screen-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(6, 6, 14, 0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 24px;
+    z-index: 100;
+    overflow-y: auto;
+  }
+
+  .hidden { display: none !important; }
+
+  h1.title {
+    font-size: 24px;
+    color: var(--neon-blue);
+    text-shadow: 0 0 12px var(--neon-blue), 3px 3px 0 #000;
+    margin-bottom: 6px;
+    letter-spacing: 2px;
+  }
+  p.subtitle {
+    font-size: 8px;
+    color: #bbb;
+    margin-bottom: 16px;
+    text-shadow: 1px 1px 0 #000;
+    line-height: 1.6;
+  }
+
+  .menu-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 250px;
+  }
+
+  .pixel-btn {
+    background: #121224;
+    color: #fff;
+    border: 2px solid var(--neon-blue);
+    padding: 10px;
+    font-family: inherit;
+    font-size: 9px;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--neon-pink);
+    transition: transform 0.1s, background 0.1s;
+  }
+  .pixel-btn:hover {
+    background: var(--neon-blue);
+    color: #000;
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--neon-pink);
+  }
+  .pixel-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--neon-pink);
+  }
+
+  .creator-btn {
+    border-color: var(--neon-gold);
+    box-shadow: 3px 3px 0 var(--neon-gold);
+    color: var(--neon-gold);
+  }
+
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+    width: 100%;
+    max-width: 680px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 6px;
+  }
+  .card-item {
+    background: #101020;
+    border: 2px solid #333;
+    padding: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: 0.15s;
+  }
+  .card-item:hover { border-color: var(--neon-green); }
+  .card-item.locked { opacity: 0.45; cursor: not-allowed; border-color: #444; }
+  .card-item.selected { border-color: var(--neon-gold); background: #1a1830; }
+  .card-item h4 { font-size: 8px; color: var(--neon-green); margin-bottom: 3px; }
+  .card-item p { font-size: 7px; color: #aaa; font-family: 'Rajdhani', sans-serif; font-weight: 600; line-height: 1.2; }
+
+  /* Cutscenes */
+  #cutscene-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    z-index: 120;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    text-align: center;
+  }
+  #cutscene-text {
+    font-size: 11px;
+    line-height: 2;
+    color: var(--neon-blue);
+    margin-bottom: 24px;
+    max-width: 620px;
+  }
+
+  /* Transition warp */
+  #portal-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, #ff0055 0%, #000 75%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    z-index: 110;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 13px;
+    color: #fff;
+    text-shadow: 0 0 10px #00f0ff;
+  }
+
+  .title-stats {
+    margin-top: 14px;
+    font-size: 8px;
+    color: var(--neon-gold);
+    display: flex;
+    gap: 12px;
+  }
+
+  .auth-input {
+    background: #141428;
+    border: 2px solid var(--neon-gold);
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    padding: 10px;
+    text-align: center;
+    width: 250px;
+    margin-bottom: 12px;
+    outline: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-wrapper">
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
+  <div id="crt-overlay"></div>
+
+  <div id="portal-screen">
+    <div id="portal-warp-title">WARPING REALITY...</div>
+  </div>
+
+  <!-- Cutscenes -->
+  <div id="cutscene-screen" class="hidden">
+    <div id="cutscene-speaker" style="color:var(--neon-pink); font-size:10px; margin-bottom:10px;">MULTIVERSE PROTOCOL</div>
+    <div id="cutscene-text">"Dimensional breach detected."</div>
+    <button class="pixel-btn" id="btn-skip-cutscene" style="width:160px;">[CONTINUE]</button>
+  </div>
+
+  <!-- HUD -->
+  <div id="ui-layer" class="hidden">
+    <div>
+      <div class="hud-top">
+        <div class="hud-stat"><span>❤️</span> <span id="hud-lives">3</span></div>
+        <div class="hud-stat"><span>⚡ HP:</span> <span id="hud-hp">3/3</span></div>
+        <div class="hud-stat"><span>💎</span> <span id="hud-orbs">0</span></div>
+        <div class="hud-stat"><span>HERO:</span> <span id="hud-hero" style="color:var(--neon-blue)">SCOUT</span></div>
+        <div class="hud-stat"><span>W:</span> <span id="hud-world" style="color:var(--neon-gold)">1</span></div>
+        <div class="hud-stat"><span>PTS:</span> <span id="hud-score">0</span></div>
+        <button class="hud-btn" id="btn-pause">PAUSE</button>
+        <button class="hud-btn" id="btn-sound">🔊</button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <!-- Ability Cooldown Indicator -->
+        <div id="ability-status-wrap">
+          <span id="ability-cd-label">ABILITY [J/K/L/U]:</span>
+          <div id="ability-cd-fill">
+            <div id="ability-cd-bar"></div>
+          </div>
+          <span id="ability-uses-label" style="color:var(--neon-gold);">READY</span>
+        </div>
+
+        <!-- Compass -->
+        <div id="compass-bar-wrap">
+          <div id="compass-text">PORTAL COMPASS: 100%</div>
+          <div id="compass-track">
+            <div id="compass-marker"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="boss-health-container">
+        <div id="boss-name-label">KRONOS (PHASE 1)</div>
+        <div class="health-track">
+          <div id="boss-health-bar"></div>
+        </div>
+        <div class="health-track" id="boss2-health-track">
+          <div id="boss2-health-bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Touch Controls -->
+  <div id="touch-controls">
+    <div class="touch-group">
+      <div class="touch-btn" id="touch-left">◄</div>
+      <div class="touch-btn" id="touch-right">►</div>
+    </div>
+    <div class="touch-group">
+      <div class="touch-btn touch-ability" id="touch-ability">POW</div>
+      <div class="touch-btn" id="touch-jump">▲</div>
+    </div>
+  </div>
+
+  <!-- Main Menu -->
+  <div id="screen-menu" class="screen-overlay">
+    <h1 class="title">PARALLEL WORLDS</h1>
+    <p class="subtitle">12 Pixel Dimensions • Advanced Boss Mechanics • Gritty Pixel Overhaul</p>
+    <div class="menu-btn-group">
+      <button class="pixel-btn" id="btn-start">PLAY CAMPAIGN</button>
+      <button class="pixel-btn" id="btn-heroes">HERO SELECTION</button>
+      <button class="pixel-btn" id="btn-worlds">SELECT WORLD</button>
+      <button class="pixel-btn" id="btn-quests">QUESTS & UNLOCKS</button>
+      <button class="pixel-btn" id="btn-leaderboard">LEADERBOARD</button>
+      <button class="pixel-btn creator-btn" id="btn-creator">CREATOR ONLY 👑</button>
+      <button class="pixel-btn" id="btn-how">HOW TO PLAY</button>
+    </div>
+    <div class="title-stats" id="title-stats-display">
+      <span>WINS: 0</span> | <span>HIGH W: 1</span> | <span>HEROES: 1/6</span>
+    </div>
+  </div>
+
+  <!-- Creator Password Modal -->
+  <div id="screen-creator" class="screen-overlay hidden">
+    <h1 class="title" style="font-size:18px; color:var(--neon-gold); text-shadow:0 0 10px var(--neon-gold);">CREATOR AUTHENTICATION</h1>
+    <p class="subtitle">Enter Developer Access Passcode (Disables Cooldowns)</p>
+    <input type="password" class="auth-input" id="creator-pass" placeholder="ENTER CODE" autocomplete="off" />
+    <div id="creator-msg" style="font-size:8px; color:var(--neon-pink); margin-bottom:12px;"></div>
+    <div class="menu-btn-group">
+      <button class="pixel-btn creator-btn" id="btn-creator-submit">UNLOCK ALL (SESSION)</button>
+      <button class="pixel-btn" id="btn-creator-back">BACK</button>
+    </div>
+  </div>
+
+  <!-- Hero Select -->
+  <div id="screen-heroes" class="screen-overlay hidden">
+    <h1 class="title" style="font-size:18px;">CHOOSE HERO</h1>
+    <div class="grid-container" id="hero-list-container"></div>
+    <button class="pixel-btn" id="btn-heroes-back" style="width:200px;">CONFIRM & BACK</button>
+  </div>
+
+  <!-- World Select -->
+  <div id="screen-select" class="screen-overlay hidden">
+    <h1 class="title" style="font-size:18px;">SELECT REALITY (1-12)</h1>
+    <div class="grid-container" id="world-list-container"></div>
+    <button class="pixel-btn" id="btn-select-back" style="width:200px;">BACK</button>
+  </div>
+
+  <!-- Quests -->
+  <div id="screen-quests" class="screen-overlay hidden">
+    <h1 class="title" style="font-size:18px;">QUEST LOG & UNLOCKS</h1>
+    <div class="grid-container" id="quest-list-container" style="grid-template-columns: 1fr;"></div>
+    <button class="pixel-btn" id="btn-quests-back" style="width:200px;">BACK</button>
+  </div>
+
+  <!-- Leaderboard -->
+  <div id="screen-leaderboard" class="screen-overlay hidden">
+    <h1 class="title" style="font-size:18px;">MULTIVERSE LEADERBOARD</h1>
+    <div class="grid-container" id="leaderboard-container" style="grid-template-columns: 1fr; max-width: 480px;"></div>
+    <button class="pixel-btn" id="btn-leaderboard-back" style="width:200px;">BACK</button>
+  </div>
+
+  <!-- How to play -->
+  <div id="screen-how" class="screen-overlay hidden">
+    <h1 class="title" style="font-size:18px;">CAMPAIGN GUIDE</h1>
+    <div style="background:#121224; border:2px solid #444; padding:12px; max-width:540px; font-size:8px; line-height:1.7; text-align:left; margin-bottom:12px;">
+      <p>🎮 <b>CONTROLS:</b><br>
+         • Move: <b>[A / D]</b> or <b>[← / →]</b> | Jump: <b>[W / Space / ↑]</b><br>
+         • Hero Ability: <b>[J / K / L / U]</b> or Touch Ability Button.<br><br>
+         ⚡ <b>SPECIALIZED HERO POWERS:</b><br>
+         • <b>Kronell [J]:</b> Time Orb (12s CD).<br>
+         • <b>Atticus [U]:</b> Summon Phantoms (10s CD, Max 10/world).<br>
+         • <b>Glacier [K]:</b> Freeze All Enemies (10s CD, Max 20 uses across campaign).<br>
+         • <b>Helios [L]:</b> Mini Sun Orb (10s CD, Max 5/world).<br><br>
+         👑 <i>Note: Creator mode disables all ability cooldowns & use limits!</i>
+      </p>
+    </div>
+    <button class="pixel-btn" id="btn-how-back" style="width:200px;">BACK</button>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div id="screen-pause" class="screen-overlay hidden">
+    <h1 class="title" style="font-size:22px;">PAUSED</h1>
+    <div class="menu-btn-group">
+      <button class="pixel-btn" id="btn-resume">RESUME</button>
+      <button class="pixel-btn" id="btn-restart">RETRY WORLD</button>
+      <button class="pixel-btn" id="btn-menu">TITLE SCREEN</button>
+    </div>
+  </div>
+
+  <!-- Game Over -->
+  <div id="screen-gameover" class="screen-overlay hidden">
+    <h1 class="title" style="color:var(--neon-pink); text-shadow:0 0 12px var(--neon-pink);">DEFEATED</h1>
+    <p class="subtitle" id="gameover-desc">You perished in the multiverse rift.</p>
+    <div class="menu-btn-group">
+      <button class="pixel-btn" id="btn-retry-dead">RETRY LEVEL</button>
+      <button class="pixel-btn" id="btn-menu-dead">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- Victory / Ending Screen -->
+  <div id="screen-victory" class="screen-overlay hidden">
+    <h1 class="title" style="color:var(--neon-gold); text-shadow: 0 0 16px var(--neon-gold); font-size:20px; margin-bottom:12px;">THANK YOU FOR PLAYING!</h1>
+    <p class="subtitle" style="color:var(--neon-green); font-size:10px; line-height:1.8; margin-bottom:14px; max-width:620px;">
+      ✨ YOU REACHED THE END OF THE GAME WITH A PERFECT SCORE OF WINS! ✨
+    </p>
+    <div id="victory-stats-box" style="background:#101020; border:2px solid var(--neon-blue); padding:12px; margin-bottom:16px; font-size:8px; line-height:1.8; text-align:left; width:100%; max-width:440px;">
+      <div>🏆 <b>MULTIVERSE STATUS:</b> <span style="color:var(--neon-green);">COMPLETELY LIBERATED</span></div>
+      <div>⚡ <b>FINAL SCORE:</b> <span id="victory-final-score" style="color:var(--neon-gold);">0</span></div>
+      <div>💎 <b>TOTAL ORBS COLLECTED:</b> <span id="victory-final-orbs" style="color:var(--neon-blue);">0</span></div>
+      <div>👑 <b>VERIFIED PERFECT WINS:</b> <span id="victory-final-wins" style="color:var(--neon-pink);">0</span></div>
+    </div>
+    <div class="menu-btn-group">
+      <button class="pixel-btn" id="btn-victory-play">NEW CAMPAIGN</button>
+      <button class="pixel-btn" id="btn-victory-menu">MAIN MENU</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   PARALLEL WORLDS - 12-DIMENSION ENGINE
+   ========================================================= */
+
+class SoundController {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+  playTone(freq, type, duration, slide = 0, vol = 0.15) {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      if (slide !== 0) {
+        osc.frequency.linearRampToValueAtTime(freq + slide, this.ctx.currentTime + duration);
+      }
+      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    } catch(e){}
+  }
+  jump() { this.playTone(180, 'square', 0.14, 220); }
+  coin() { this.playTone(600, 'triangle', 0.08); setTimeout(() => this.playTone(920, 'triangle', 0.14), 50); }
+  hit() { this.playTone(130, 'sawtooth', 0.22, -60); }
+  stomp() { this.playTone(340, 'square', 0.1, -160); }
+  portal() { this.playTone(220, 'sine', 0.6, 550); }
+  shoot() { this.playTone(480, 'square', 0.12, -280, 0.2); }
+  freeze() { this.playTone(700, 'sine', 0.35, -400, 0.25); }
+  sun() { this.playTone(300, 'sawtooth', 0.4, 300, 0.25); }
+  bossHit() { this.playTone(85, 'sawtooth', 0.28, -40); }
+  slam() { this.playTone(60, 'square', 0.35, -20, 0.3); }
+  powerup() {
+    [350, 450, 600, 750].forEach((f, i) => {
+      setTimeout(() => this.playTone(f, 'sine', 0.12), i * 60);
+    });
+  }
+  win() {
+    [261, 329, 392, 523, 659, 784].forEach((f, i) => {
+      setTimeout(() => this.playTone(f, 'square', 0.2), i * 140);
+    });
+  }
+}
+const audio = new SoundController();
+
+// Session-Only Memory Storage
+let saveState = {
+  wins: 0,
+  bestScore: 0,
+  highestWorld: 1,
+  selectedHero: 'default',
+  unlockedHeroes: ['default'],
+  quests: {
+    kronos: false,
+    necrowler: false,
+    tundra_ruins: false,
+    atticus_helios: false
+  },
+  world9Completed: false,
+  world10Completed: false,
+  glacierRunUsesLeft: 20,
+  isCreatorMode: false,
+  leaderboard: [
+    { name: "Alpha Guardian", wins: 5, score: 34500 },
+    { name: "Time Traveler", wins: 3, score: 22000 },
+    { name: "Pixel Master", wins: 1, score: 15400 }
+  ]
+};
+
+function persistData() {
+  updateMenuDisplays();
+}
+
+// Hero Definitions
+const HEROES = {
+  default: {
+    name: "Pixel Scout",
+    title: "Guardian Scout",
+    maxHp: 3,
+    lives: 3,
+    speed: 4.2,
+    jumpMultiplier: 1.0,
+    desc: "Cybernetically enhanced dimensional scout.",
+    color: '#00f0ff',
+    abilityName: 'None',
+    cdMax: 0
+  },
+  kronell: {
+    name: "Kronell",
+    title: "Time Commander (Kronos Counterpart)",
+    maxHp: 3,
+    lives: 3,
+    speed: 4.4,
+    jumpMultiplier: 1.2,
+    desc: "Shoots high-velocity Time Orbs [J] (12s CD).",
+    color: '#ffd700',
+    abilityName: 'Time Orb [J]',
+    cdMax: 12 * 60
+  },
+  necrowler_hero: {
+    name: "Necrowler Shade",
+    title: "Soul Reaper (Necrowler Counterpart)",
+    maxHp: 5,
+    lives: 4,
+    speed: 4.0,
+    jumpMultiplier: 1.0,
+    desc: "Undead durability: 5 Max HP & 4 starting lives.",
+    color: '#39ff14',
+    abilityName: 'None',
+    cdMax: 0
+  },
+  atticus: {
+    name: "Atticus Hero",
+    title: "Ash Cannon Mech (Atticus Counterpart)",
+    maxHp: 3,
+    lives: 3,
+    speed: 5.0,
+    jumpMultiplier: 1.1,
+    desc: "Summons combat phantoms [U] (10s CD, max 10/world).",
+    color: '#ff0055',
+    abilityName: 'Phantoms [U]',
+    cdMax: 10 * 60
+  },
+  glacier: {
+    name: "Glacier",
+    title: "Frost Weaver (Tundra Hero)",
+    maxHp: 3,
+    lives: 3,
+    speed: 4.2,
+    jumpMultiplier: 1.0,
+    desc: "Freezes all enemies in ice [K] (10s CD, 20 total run uses).",
+    color: '#a0e6ff',
+    abilityName: 'Absolute Zero [K]',
+    cdMax: 10 * 60
+  },
+  helios: {
+    name: "Helios Hero",
+    title: "Solar Seraph (Helios Counterpart)",
+    maxHp: 4,
+    lives: 3,
+    speed: 4.6,
+    jumpMultiplier: 1.15,
+    desc: "Launches blazing Mini Suns [L] (10s CD, max 5/world).",
+    color: '#ffea00',
+    abilityName: 'Mini Sun [L]',
+    cdMax: 10 * 60
+  }
+};
+
+// 12 World Campaign Definitions
+const WORLD_CONFIGS = {
+  1: { name: "Pixel Guardians", bg1: "#0a141c", bg2: "#142830", groundColor: "#2e7d32", dirtColor: "#271d18", gravity: 0.55, jumpPower: -11.5, length: 2600, orbColor: '#39ff14' },
+  2: { name: "Cyber Systems", bg1: "#040510", bg2: "#120c24", groundColor: "#00f0ff", dirtColor: "#08101a", gravity: 0.55, jumpPower: -11.5, length: 2800, orbColor: '#00f0ff' },
+  3: { name: "Dark & Scary", bg1: "#030308", bg2: "#0d0517", groundColor: "#511378", dirtColor: "#140620", gravity: 0.55, jumpPower: -11.5, length: 2900, orbColor: '#b026ff', fog: true },
+  4: { name: "Time Citadel (Boss: Kronos)", bg1: "#120020", bg2: "#2a0030", groundColor: "#ffd700", dirtColor: "#261a00", gravity: 0.45, jumpPower: -10.5, length: 2200, orbColor: '#ffd700', isBoss: true },
+  5: { name: "Swamp World", bg1: "#081210", bg2: "#0d201a", groundColor: "#2d5e18", dirtColor: "#142418", gravity: 0.58, jumpPower: -11.2, length: 3000, orbColor: '#7cb342' },
+  6: { name: "Red Abyss", bg1: "#1a0305", bg2: "#30050a", groundColor: "#b30000", dirtColor: "#1f0306", gravity: 0.55, jumpPower: -11.5, length: 3100, orbColor: '#ff1744', crimsonBlur: true },
+  7: { name: "Ancient Sands", bg1: "#20160b", bg2: "#3b2a12", groundColor: "#e69900", dirtColor: "#332200", gravity: 0.55, jumpPower: -11.5, length: 3200, orbColor: '#ffe082' },
+  8: { name: "Graveyard Boss (Necrowler)", bg1: "#06080c", bg2: "#10141c", groundColor: "#37474f", dirtColor: "#141a1f", gravity: 0.55, jumpPower: -11.5, length: 2300, orbColor: '#90a4ae', isBoss: true },
+  9: { name: "Haunted Tundra", bg1: "#06101c", bg2: "#0f2236", groundColor: "#6cd0e0", dirtColor: "#0b222c", gravity: 0.55, jumpPower: -11.5, length: 3200, orbColor: '#b2ebf2', slippery: true },
+  10: { name: "Valley of Ruins", bg1: "#1a1510", bg2: "#2e251a", groundColor: "#a8948e", dirtColor: "#2d1c18", gravity: 0.55, jumpPower: -11.5, length: 3300, orbColor: '#d7ccc8', ruinsTheme: true },
+  11: { name: "Soulyard Matrix", bg1: "#0a0118", bg2: "#200033", groundColor: "#e60067", dirtColor: "#100018", gravity: 0.50, jumpPower: -11.0, length: 3200, orbColor: '#ff4081', glitchFX: true },
+  12: { name: "Matrix Godly (Final Boss)", bg1: "#000802", bg2: "#011406", groundColor: "#00cc66", dirtColor: "#00240c", gravity: 0.50, jumpPower: -11.0, length: 2400, orbColor: '#69f0ae', matrixRain: true, isFinalBoss: true }
+};
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const VIEW_W = 800;
+const VIEW_H = 500;
+
+let gameState = 'MENU';
+let currentWorld = 1;
+let score = 0;
+let totalOrbs = 0;
+let lives = 3;
+let isCleanRun = true;
+let distortionTimer = 0;
+
+const keys = { left: false, right: false, up: false };
+const camera = { x: 0, y: 0 };
+let particles = [];
+let projectiles = [];
+let playerPhantoms = [];
+let floatingTexts = [];
+
+// AABB Collision
+function boxCollide(r1, r2) {
+  return r1.x < r2.x + r2.w &&
+         r1.x + r1.w > r2.x &&
+         r1.y < r2.y + r2.h &&
+         r1.y + r1.h > r2.y;
+}
+
+// Player Entity
+const player = {
+  x: 60,
+  y: 300,
+  w: 24,
+  h: 32,
+  vx: 0,
+  vy: 0,
+  grounded: false,
+  hp: 3,
+  maxHp: 3,
+  invulnerable: 0,
+  facingRight: true,
+  respawnX: 60,
+  respawnY: 300,
+  growthTimer: 0,
+  heroKey: 'default',
+  speed: 4.2,
+  jumpMultiplier: 1.0,
+  abilityCdTimer: 0,
+  phantomsSummonedThisWorld: 0,
+  sunsSummonedThisWorld: 0,
+  animTick: 0,
+
+  initHero(heroKey) {
+    this.heroKey = heroKey;
+    const cfg = HEROES[heroKey] || HEROES.default;
+    this.maxHp = cfg.maxHp;
+    this.hp = this.maxHp;
+    this.speed = cfg.speed;
+    this.jumpMultiplier = cfg.jumpMultiplier;
+    this.color = cfg.color;
+    this.abilityCdTimer = 0;
+    this.phantomsSummonedThisWorld = 0;
+    this.sunsSummonedThisWorld = 0;
+    document.getElementById('hud-hero').textContent = cfg.title.toUpperCase();
+
+    const touchAb = document.getElementById('touch-ability');
+    if (cfg.abilityName !== 'None') {
+      touchAb.style.display = 'flex';
+      touchAb.textContent = cfg.abilityName.split(' ')[0].toUpperCase();
+    } else {
+      touchAb.style.display = 'none';
+    }
+  },
+
+  reset(full = false) {
+    this.x = this.respawnX;
+    this.y = this.respawnY;
+    this.vx = 0;
+    this.vy = 0;
+    this.hp = this.maxHp;
+    this.invulnerable = 60;
+    this.growthTimer = 0;
+    if (full) {
+      this.respawnX = 60;
+      this.respawnY = 300;
+      this.x = 60;
+      this.y = 300;
+      this.phantomsSummonedThisWorld = 0;
+      this.sunsSummonedThisWorld = 0;
+    }
+  },
+
+  useAbility() {
+    if (!saveState.isCreatorMode && this.abilityCdTimer > 0) {
+      addFloatingText(this.x, this.y - 15, "COOLDOWN!");
+      return;
+    }
+
+    if (this.heroKey === 'kronell') {
+      projectiles.push({
+        x: this.facingRight ? this.x + this.w + 4 : this.x - 14,
+        y: this.y + 10,
+        vx: this.facingRight ? 8.5 : -8.5,
+        vy: 0,
+        w: 14, h: 14,
+        friendly: true,
+        damage: 2,
+        color: '#ffd700',
+        life: 90
+      });
+      audio.shoot();
+      addFloatingText(this.x, this.y - 10, "CHRONO CANNON!");
+      if (!saveState.isCreatorMode) {
+        this.abilityCdTimer = HEROES.kronell.cdMax;
+      }
+    } else if (this.heroKey === 'atticus') {
+      if (!saveState.isCreatorMode && this.phantomsSummonedThisWorld >= 10) {
+        addFloatingText(this.x, this.y - 15, "MAX 10 PHANTOMS USED!");
+        return;
+      }
+      this.phantomsSummonedThisWorld++;
+      playerPhantoms.push({
+        x: this.x + (this.facingRight ? 25 : -25),
+        y: this.y,
+        w: 22, h: 30,
+        vx: this.facingRight ? 4 : -4,
+        life: 280
+      });
+      audio.stomp();
+      const txt = saveState.isCreatorMode ? "ASH PHANTOM (∞)" : `ASH PHANTOM (${this.phantomsSummonedThisWorld}/10)`;
+      addFloatingText(this.x, this.y - 10, txt);
+      if (!saveState.isCreatorMode) {
+        this.abilityCdTimer = HEROES.atticus.cdMax;
+      }
+    } else if (this.heroKey === 'glacier') {
+      if (!saveState.isCreatorMode && saveState.glacierRunUsesLeft <= 0) {
+        addFloatingText(this.x, this.y - 15, "NO GLACIER USES LEFT!");
+        return;
+      }
+      if (!saveState.isCreatorMode) {
+        saveState.glacierRunUsesLeft--;
+      }
+      for (let e of level.enemies) {
+        if (Math.abs(e.x - this.x) < 450) e.frozenTimer = 180;
+      }
+      audio.freeze();
+      addSparkles(this.x + this.w/2, this.y + this.h/2, '#a0e6ff', 24);
+      const txt = saveState.isCreatorMode ? "ABSOLUTE ZERO! (∞)" : `ABSOLUTE ZERO! (${saveState.glacierRunUsesLeft} LEFT)`;
+      addFloatingText(this.x, this.y - 10, txt);
+      if (!saveState.isCreatorMode) {
+        this.abilityCdTimer = HEROES.glacier.cdMax;
+      }
+    } else if (this.heroKey === 'helios') {
+      if (!saveState.isCreatorMode && this.sunsSummonedThisWorld >= 5) {
+        addFloatingText(this.x, this.y - 15, "MAX 5 SUNS USED!");
+        return;
+      }
+      this.sunsSummonedThisWorld++;
+      projectiles.push({
+        x: this.x,
+        y: this.y - 25,
+        vx: this.facingRight ? 4.5 : -4.5,
+        vy: -0.3,
+        w: 24, h: 24,
+        friendly: true,
+        damage: 4,
+        color: '#ffea00',
+        life: 140
+      });
+      audio.sun();
+      const txt = saveState.isCreatorMode ? "MINI SUN (∞)" : `MINI SUN (${this.sunsSummonedThisWorld}/5)`;
+      addFloatingText(this.x, this.y - 10, txt);
+      if (!saveState.isCreatorMode) {
+        this.abilityCdTimer = HEROES.helios.cdMax;
+      }
+    }
+  },
+
+  update() {
+    const wConfig = WORLD_CONFIGS[currentWorld];
+    this.animTick++;
+
+    if (this.abilityCdTimer > 0) this.abilityCdTimer--;
+
+    this.w = this.growthTimer > 0 ? 32 : 24;
+    this.h = this.growthTimer > 0 ? 44 : 32;
+    if (this.growthTimer > 0) this.growthTimer--;
+
+    if (keys.left) {
+      this.vx = -this.speed;
+      this.facingRight = false;
+    } else if (keys.right) {
+      this.vx = this.speed;
+      this.facingRight = true;
+    } else {
+      this.vx *= wConfig.slippery ? 0.94 : 0.7;
+      if (Math.abs(this.vx) < 0.1) this.vx = 0;
+    }
+
+    if (keys.up && this.grounded) {
+      this.vy = wConfig.jumpPower * this.jumpMultiplier;
+      this.grounded = false;
+      audio.jump();
+      addSparkles(this.x + this.w/2, this.y + this.h, '#ffffff', 4);
+    }
+
+    this.vy += wConfig.gravity;
+    if (this.vy > 12) this.vy = 12;
+
+    this.x += this.vx;
+    this.checkHorizontalCollisions();
+
+    this.y += this.vy;
+    this.grounded = false;
+    this.checkVerticalCollisions();
+
+    if (this.invulnerable > 0) this.invulnerable--;
+
+    if (this.y > 650) {
+      this.takeDamage(1, true, "Fell into the Multiverse Rift");
+    }
+  },
+
+  checkHorizontalCollisions() {
+    for (let plat of level.platforms) {
+      if (plat.active !== false && boxCollide(this, plat)) {
+        if (this.vx > 0) this.x = plat.x - this.w;
+        else if (this.vx < 0) this.x = plat.x + plat.w;
+      }
+    }
+  },
+
+  checkVerticalCollisions() {
+    for (let plat of level.platforms) {
+      if (plat.active !== false && boxCollide(this, plat)) {
+        if (this.vy > 0) {
+          this.y = plat.y - this.h;
+          this.vy = 0;
+          this.grounded = true;
+          if (plat.type === 'disappearing' && !plat.touched) {
+            plat.touched = true;
+            plat.timer = 45;
+          }
+        } else if (this.vy < 0) {
+          this.y = plat.y + plat.h;
+          this.vy = 0;
+        }
+      }
+    }
+  },
+
+  takeDamage(amount, instantKill = false, cause = "Hazard") {
+    if (this.invulnerable > 0 && !instantKill) return;
+    this.hp -= amount;
+    audio.hit();
+    addSparkles(this.x + this.w/2, this.y + this.h/2, '#ff0055', 18);
+    this.invulnerable = 65;
+
+    if (this.hp <= 0 || instantKill) {
+      lives--;
+      isCleanRun = false;
+      updateHud();
+      if (lives <= 0) {
+        gameOver(cause);
+      } else {
+        this.reset();
+      }
+    }
+    updateHud();
+  },
+
+  draw() {
+    if (this.invulnerable % 6 > 3) return;
+    ctx.save();
+    ctx.translate(this.x - camera.x, this.y - camera.y);
+
+    const c = this.color || '#00f0ff';
+    const isMoving = Math.abs(this.vx) > 0.2;
+    const legOffset = isMoving ? Math.sin(this.animTick * 0.35) * 3 : 0;
+
+    ctx.fillStyle = '#11131c';
+    ctx.fillRect(4, 2, 16, 8);
+    ctx.fillStyle = c;
+    ctx.fillRect(6, 0, 12, 4);
+
+    ctx.fillStyle = this.heroKey === 'atticus' ? '#ff1133' : (this.heroKey === 'necrowler_hero' ? '#39ff14' : '#00f0ff');
+    if (this.facingRight) {
+      ctx.fillRect(12, 4, 6, 3);
+    } else {
+      ctx.fillRect(6, 4, 6, 3);
+    }
+
+    ctx.fillStyle = c;
+    ctx.fillRect(2, 9, 5, 5);
+    ctx.fillRect(17, 9, 5, 5);
+
+    ctx.fillStyle = '#181b2a';
+    ctx.fillRect(5, 10, 14, 12);
+    ctx.fillStyle = c;
+    ctx.fillRect(8, 12, 8, 7);
+
+    ctx.fillStyle = '#0a0d18';
+    ctx.fillRect(4, 22, 6, 9 + legOffset);
+    ctx.fillRect(14, 22, 6, 9 - legOffset);
+
+    ctx.fillStyle = c;
+    ctx.fillRect(3, 29 + legOffset, 7, 3);
+    ctx.fillRect(14, 29 - legOffset, 7, 3);
+
+    if (this.heroKey === 'atticus') {
+      ctx.fillStyle = '#ffaa00';
+      if (this.facingRight) ctx.fillRect(18, 13, 10, 5);
+      else ctx.fillRect(-4, 13, 10, 5);
+    }
+
+    ctx.restore();
+  }
+};
+
+// Level Architecture & Entities
+let level = {
+  platforms: [],
+  enemies: [],
+  collectibles: [],
+  checkpoints: [],
+  powerups: [],
+  graves: [],
+  portal: null,
+  boss: null,
+  boss2: null,
+  megaMechAlerted: false,
+  victoryTriggered: false,
+  width: 3000
+};
+
+function buildWorld(worldNum) {
+  currentWorld = worldNum;
+  const cfg = WORLD_CONFIGS[worldNum];
+  level.width = cfg.length;
+  level.platforms = [];
+  level.enemies = [];
+  level.collectibles = [];
+  level.checkpoints = [];
+  level.powerups = [];
+  level.graves = [];
+  level.portal = null;
+  level.boss = null;
+  level.boss2 = null;
+  level.megaMechAlerted = false;
+  level.victoryTriggered = false;
+
+  player.reset(true);
+
+  // Spawn Ground
+  level.platforms.push({ x: 0, y: 400, w: 600, h: 100, type: 'ground' });
+
+  // Progressive Platform Segments with Jumpable Gaps
+  let curX = 600;
+  while (curX < level.width) {
+    const gap = (curX > level.width - 600) ? 0 : 95;
+    curX += gap;
+    const platW = Math.min(420, level.width - curX);
+    level.platforms.push({ x: curX, y: 400, w: platW, h: 100, type: 'ground' });
+
+    // Rewarding elevated platforms
+    if (curX < level.width - 450) {
+      const isHigh = Math.random() > 0.4;
+      const elevY = isHigh ? 230 : 305;
+      const type = (worldNum === 3 || worldNum === 11) ? 'disappearing' : (worldNum === 2 ? 'moving' : 'normal');
+
+      level.platforms.push({
+        x: curX + 80,
+        y: elevY,
+        w: 115,
+        h: 18,
+        type,
+        timer: 0,
+        touched: false,
+        active: true,
+        axis: 'x',
+        dir: 1,
+        speed: 1.5,
+        origX: curX + 80,
+        range: 110
+      });
+
+      if (Math.random() > 0.4) {
+        level.powerups.push({
+          x: curX + 120,
+          y: elevY - 22,
+          w: 18, h: 18,
+          type: Math.random() > 0.5 ? 'stool' : 'medkit',
+          collected: false
+        });
+      }
+    }
+    curX += platW;
+  }
+
+  // Checkpoints
+  level.checkpoints.push({ x: level.width * 0.35, y: 370, w: 20, h: 30, active: false });
+  level.checkpoints.push({ x: level.width * 0.70, y: 370, w: 20, h: 30, active: false });
+
+  // Collectibles
+  for (let ox = 150; ox < level.width - 300; ox += 140) {
+    level.collectibles.push({
+      x: ox,
+      y: 330 - Math.sin(ox * 0.04) * 70,
+      w: 14, h: 14,
+      collected: false,
+      color: cfg.orbColor
+    });
+  }
+
+  // Build Graves for World 8
+  if (worldNum === 8) {
+    for (let g = 0; g < 7; g++) {
+      level.graves.push({ x: level.width - 800 + g * 90, y: 380, w: 24, h: 20 });
+    }
+  }
+
+  // Populate World Enemies
+  populateWorldEnemies(worldNum);
+
+  // Transition Portals
+  if (!cfg.isBoss && !cfg.isFinalBoss) {
+    level.portal = {
+      x: level.width - 220,
+      y: 320,
+      w: 45,
+      h: 80,
+      type: 'portal',
+      targetWorld: worldNum + 1
+    };
+    document.getElementById('boss-health-container').style.display = 'none';
+  }
+
+  // Boss Setups
+  if (worldNum === 4) setupKronosBoss();
+  else if (worldNum === 8) setupNecrowlerBoss();
+  else if (worldNum === 12) setupFinalAtticusDeHeliosBoss();
+
+  updateHud();
+}
+
+function populateWorldEnemies(w) {
+  const density = 6 + w;
+  const step = (level.width - 600) / density;
+
+  for (let i = 1; i <= density; i++) {
+    const ex = 400 + i * step;
+    if (ex > level.width - 500) continue;
+
+    if (w === 1) {
+      level.enemies.push(createEnemy('bodyguard', ex, 370, ex - 100, ex + 100));
+      if (i % 2 === 0) level.enemies.push(createEnemy('drone', ex, 220, ex - 80, ex + 80, true));
+    } else if (w === 2) {
+      level.enemies.push(createEnemy('mech', ex, 370, ex - 100, ex + 100));
+      level.enemies.push(createEnemy('drone', ex, 220, ex - 80, ex + 80, false));
+    } else if (w === 3) {
+      level.enemies.push(createEnemy('ghoul', ex, 370, ex - 90, ex + 90));
+    } else if (w === 5) {
+      level.enemies.push(createEnemy('water_goblin', ex, 370, ex - 90, ex + 90));
+    } else if (w === 6) {
+      level.enemies.push(createEnemy('flesh_giant', ex, 355, ex - 100, ex + 100));
+    } else if (w === 7) {
+      level.enemies.push(createEnemy('sandy_ghoul', ex, 370, ex - 100, ex + 100));
+    } else if (w === 9) {
+      level.enemies.push(createEnemy('ashinaga', ex, 360, ex - 110, ex + 110));
+    } else if (w === 10) {
+      level.enemies.push(createEnemy('armored_ruin', ex, 370, ex - 100, ex + 100));
+    } else if (w === 11) {
+      level.enemies.push(createEnemy('static_soul', ex, 340, ex - 90, ex + 90));
+    }
+  }
+}
+
+function createEnemy(type, x, y, minX, maxX, vertical = false) {
+  return {
+    type,
+    x, y,
+    w: type === 'flesh_giant' ? 34 : (type === 'mega_mech' ? 38 : 24),
+    h: type === 'flesh_giant' ? 44 : (type === 'mega_mech' ? 42 : 30),
+    vx: (type === 'sandy_ghoul' || type === 'ashinaga') ? 0.75 : 1.5,
+    vy: 1.5,
+    minX, maxX,
+    minY: y - 60, maxY: y + 60,
+    vertical,
+    alive: true,
+    frozenTimer: 0,
+    timer: 0,
+    hp: (type === 'armored_ruin' || type === 'mega_mech') ? 2 : 1,
+    invis: false
+  };
+}
+
+// BOSS 1: KRONOS (World 4)
+function setupKronosBoss() {
+  document.getElementById('boss-health-container').style.display = 'block';
+  document.getElementById('boss-name-label').textContent = 'KRONOS: TIME MAFIA MECH (PHASE 1)';
+  document.getElementById('boss2-health-bar').style.display = 'none';
+
+  level.boss = {
+    name: 'Kronos',
+    x: level.width - 480,
+    y: 300,
+    w: 58, h: 76,
+    hp: 12, maxHp: 12,
+    vx: 2.2,
+    timer: 0,
+    invulnerable: 0,
+    pistonFistY: 0,
+
+    update() {
+      if (this.invulnerable > 0) this.invulnerable--;
+      this.timer++;
+
+      this.x += this.vx;
+      if (this.x < level.width - 700 || this.x > level.width - 240) this.vx *= -1;
+
+      this.pistonFistY = Math.sin(this.timer * 0.1) * 8;
+
+      if (this.timer % 180 === 0) {
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        projectiles.push({
+          x: this.x + 20, y: this.y + 24,
+          vx: Math.cos(angle) * 5.2,
+          vy: Math.sin(angle) * 5.2,
+          w: 14, h: 14,
+          color: '#ffd700',
+          damage: 1,
+          life: 180
+        });
+        audio.hit();
+      }
+
+      if (this.timer % 360 === 0) {
+        audio.slam();
+        addSparkles(this.x + 10, this.y + this.h, '#ffaa00', 14);
+        if (Math.abs(player.x - this.x) < 140 && player.grounded) {
+          player.takeDamage(1, false, "Crushed by Kronos's Ground Slam");
+        }
+      }
+
+      if (boxCollide(this, player)) {
+        if (player.vy > 0 && player.y + player.h < this.y + 25) {
+          this.takeDamage(1);
+          player.vy = -10.5;
+        } else {
+          player.takeDamage(1, false, "Crushed by Kronos");
+        }
+      }
+    },
+
+    takeDamage(amount) {
+      if (this.invulnerable > 0) return;
+      this.hp -= amount;
+      this.invulnerable = 35;
+      audio.bossHit();
+      addSparkles(this.x + 25, this.y + 30, '#ffd700', 16);
+      updateBossHealthUI();
+
+      if (this.hp <= 0) {
+        saveState.quests.kronos = true;
+        if (!saveState.unlockedHeroes.includes('kronell')) saveState.unlockedHeroes.push('kronell');
+        persistData();
+        triggerCutscene("KRONOS CRUSHED", "The temporal mafia titan is obliterated. Hero KRONELL is unlocked!", () => {
+          triggerPortalWarp(5);
+        });
+      }
+    },
+
+    draw() {
+      if (this.invulnerable % 6 > 3) return;
+      ctx.save();
+      ctx.translate(this.x - camera.x, this.y - camera.y);
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#ffd700';
+
+      ctx.fillStyle = '#2d2d38';
+      ctx.fillRect(4, 16, this.w - 8, this.h - 16);
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(8, 0, this.w - 16, 18);
+
+      ctx.fillStyle = '#ff1133';
+      ctx.fillRect(14, 6, 14, 4);
+
+      ctx.fillStyle = '#e6b800';
+      ctx.fillRect(-10, 20 + this.pistonFistY, 14, 20);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(-8, 36 + this.pistonFistY, 10, 4);
+
+      ctx.fillStyle = '#111';
+      ctx.fillRect(this.w - 4, 22, 16, 12);
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(this.w + 8, 24, 6, 8);
+
+      ctx.restore();
+    }
+  };
+}
+
+// BOSS 2: NECROWLER (World 8)
+function setupNecrowlerBoss() {
+  document.getElementById('boss-health-container').style.display = 'block';
+  document.getElementById('boss-name-label').textContent = 'NECROWLER: CRYPT REAPER';
+  document.getElementById('boss2-health-bar').style.display = 'none';
+
+  level.boss = {
+    name: 'Necrowler',
+    x: level.width - 480,
+    y: 300,
+    w: 52, h: 72,
+    hp: 10, maxHp: 10,
+    vx: 2.8,
+    timer: 0,
+    invulnerable: 0,
+
+    update() {
+      if (this.invulnerable > 0) this.invulnerable--;
+      this.timer++;
+
+      this.x += this.vx;
+      if (this.x < level.width - 700 || this.x > level.width - 240) this.vx *= -1;
+
+      if (this.timer % 900 === 0) {
+        projectiles.push({
+          x: this.x + 10, y: this.y + 20,
+          vx: this.vx > 0 ? 6 : -6,
+          vy: 0,
+          w: 20, h: 14,
+          color: '#e0e0e0',
+          damage: 1,
+          life: 140
+        });
+        audio.hit();
+      }
+
+      if (this.timer % 2700 === 0 || (this.hp <= 2 && this.timer % 600 === 0)) {
+        if (level.enemies.length < 8) {
+          const grave = level.graves[Math.floor(Math.random() * level.graves.length)];
+          if (grave) {
+            level.enemies.push(createEnemy('skeleton', grave.x, 370, grave.x - 80, grave.x + 80));
+            addSparkles(grave.x, grave.y, '#39ff14', 16);
+            addFloatingText(grave.x, grave.y - 15, "CRYPT SUMMON!");
+          }
+        }
+      }
+
+      if (boxCollide(this, player)) {
+        if (player.vy > 0 && player.y + player.h < this.y + 24) {
+          this.takeDamage(1);
+          player.vy = -10;
+        } else {
+          player.takeDamage(1, false, "Decapitated by Necrowler");
+        }
+      }
+    },
+
+    takeDamage(amount) {
+      if (this.invulnerable > 0) return;
+      this.hp -= amount;
+      this.invulnerable = 30;
+      audio.bossHit();
+      addSparkles(this.x + 25, this.y + 30, '#39ff14', 18);
+      updateBossHealthUI();
+
+      if (this.hp <= 0) {
+        saveState.quests.necrowler = true;
+        if (!saveState.unlockedHeroes.includes('necrowler_hero')) saveState.unlockedHeroes.push('necrowler_hero');
+        persistData();
+        triggerCutscene("NECROWLER EXORCISED", "The spectral lord of the crypt is banished. Hero NECROWLER SHADE unlocked!", () => {
+          triggerPortalWarp(9);
+        });
+      }
+    },
+
+    draw() {
+      if (this.invulnerable % 6 > 3) return;
+      ctx.save();
+      ctx.translate(this.x - camera.x, this.y - camera.y);
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = '#39ff14';
+
+      ctx.fillStyle = '#051009';
+      ctx.fillRect(2, 14, this.w - 4, this.h - 14);
+      ctx.fillStyle = '#39ff14';
+      ctx.fillRect(8, 0, this.w - 16, 16);
+
+      ctx.fillStyle = '#e0e0e0';
+      ctx.fillRect(12, 4, 12, 10);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(14, 6, 3, 3);
+      ctx.fillRect(20, 6, 3, 3);
+
+      ctx.strokeStyle = '#c8e6c9';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(this.w + 6, -10);
+      ctx.lineTo(this.w + 6, 60);
+      ctx.stroke();
+
+      ctx.fillStyle = '#39ff14';
+      ctx.fillRect(this.w - 6, -12, 18, 6);
+
+      ctx.restore();
+    }
+  };
+}
+
+// FINAL BOSS: ATTICUS DE HELIOS (World 12)
+function setupFinalAtticusDeHeliosBoss() {
+  document.getElementById('boss-health-container').style.display = 'block';
+  document.getElementById('boss-name-label').textContent = 'ATTICUS DE HELIOS: GOD OF FLAME';
+  document.getElementById('boss2-health-bar').style.display = 'none';
+
+  level.boss = {
+    name: 'Atticus de Helios',
+    x: level.width - 500,
+    y: 300,
+    w: 62, h: 78,
+    hp: 14, maxHp: 14,
+    vx: 3.2,
+    timer: 0,
+    invulnerable: 0,
+
+    update() {
+      if (this.invulnerable > 0) this.invulnerable--;
+      this.timer++;
+
+      this.x += this.vx;
+      if (this.x < level.width - 800 || this.x > level.width - 200) this.vx *= -1;
+
+      if (this.timer % 90 === 0) {
+        for (let i = -1; i <= 1; i++) {
+          projectiles.push({
+            x: this.x + 25, y: this.y + 25,
+            vx: (this.vx > 0 ? 5.8 : -5.8),
+            vy: i * 2,
+            w: 16, h: 16,
+            color: '#ff3300',
+            damage: 1,
+            life: 140
+          });
+        }
+        audio.hit();
+      }
+
+      if (boxCollide(this, player)) {
+        if (player.vy > 0 && player.y + player.h < this.y + 26) {
+          this.takeDamage(1);
+          player.vy = -11;
+        } else {
+          player.takeDamage(2, false, "Incinerated by Dual Blades");
+        }
+      }
+    },
+
+    takeDamage(amount) {
+      if (this.invulnerable > 0) return;
+      this.hp -= amount;
+      this.invulnerable = 30;
+      audio.bossHit();
+      addSparkles(this.x + 30, this.y + 35, '#ff3300', 22);
+      updateBossHealthUI();
+
+      if (this.hp <= 0) {
+        level.boss = null;
+        triggerCutscene("FUSION SPLIT!", "Atticus de Helios fractures into ATTICUS ASH & HELIOS! Destroy both avatars to liberate reality!", () => {
+          setupSplitBosses();
+        });
+      }
+    },
+
+    draw() {
+      if (this.invulnerable % 6 > 3) return;
+      ctx.save();
+      ctx.translate(this.x - camera.x, this.y - camera.y);
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = '#ff3300';
+
+      ctx.fillStyle = '#210505';
+      ctx.fillRect(0, 18, this.w, this.h - 18);
+      ctx.fillStyle = '#ff3300';
+      ctx.fillRect(10, 0, this.w - 20, 20);
+
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(-10, 6, 8, 48);
+      ctx.fillRect(this.w + 2, 6, 8, 48);
+
+      ctx.restore();
+    }
+  };
+}
+
+// BUG-FREE SPLIT PHASE: ATTICUS ASH & HELIOS
+function setupSplitBosses() {
+  document.getElementById('boss-name-label').textContent = 'ATTICUS ASH & HELIOS (DUAL AVATARS)';
+  document.getElementById('boss2-health-bar').style.display = 'block';
+
+  // Smooth control & safety transition
+  player.invulnerable = 60;
+  gameState = 'PLAYING';
+
+  level.boss = {
+    name: 'Atticus Ash',
+    x: level.width - 650,
+    y: 310,
+    w: 48, h: 62,
+    hp: 8, maxHp: 8,
+    vx: 4.2,
+    timer: 0,
+    attackCd: Math.floor(Math.random() * 420) + 180,
+    invulnerable: 0,
+
+    update() {
+      if (this.invulnerable > 0) this.invulnerable--;
+      this.timer++;
+      this.x += this.vx;
+      if (this.x < level.width - 800 || this.x > level.width - 200) this.vx *= -1;
+
+      if (this.timer % this.attackCd === 0) {
+        this.attackCd = Math.floor(Math.random() * 420) + 180;
+        projectiles.push({
+          x: this.x + 15, y: this.y + 15,
+          vx: this.vx > 0 ? 7 : -7,
+          vy: 0,
+          w: 16, h: 16,
+          color: '#ff0055',
+          damage: 1,
+          life: 120
+        });
+        audio.hit();
+      }
+
+      if (boxCollide(this, player)) {
+        if (player.vy > 0 && player.y + player.h < this.y + 20) {
+          this.takeDamage(1);
+          player.vy = -10;
+        } else {
+          player.takeDamage(1, false, "Struck by Atticus Ash");
+        }
+      }
+    },
+    takeDamage(amount) {
+      if (this.invulnerable > 0) return;
+      this.hp -= amount;
+      this.invulnerable = 25;
+      audio.bossHit();
+      updateBossHealthUI();
+      if (this.hp <= 0) {
+        level.boss = null;
+        updateBossHealthUI();
+        checkFinalVictory();
+      }
+    },
+    draw() {
+      if (this.invulnerable % 6 > 3) return;
+      ctx.save();
+      ctx.translate(this.x - camera.x, this.y - camera.y);
+      ctx.fillStyle = '#ff0055';
+      ctx.fillRect(0, 0, this.w, this.h);
+      ctx.fillStyle = '#ffaa00';
+      ctx.fillRect(this.w, 14, 14, 10);
+      ctx.restore();
+    }
+  };
+
+  level.boss2 = {
+    name: 'Helios',
+    x: level.width - 350,
+    y: 310,
+    w: 48, h: 62,
+    hp: 8, maxHp: 8,
+    vx: -4.4,
+    timer: 0,
+    invulnerable: 0,
+
+    update() {
+      if (this.invulnerable > 0) this.invulnerable--;
+      this.timer++;
+      this.x += this.vx;
+      if (this.x < level.width - 800 || this.x > level.width - 200) this.vx *= -1;
+
+      if (this.timer % 780 === 0) {
+        projectiles.push({
+          x: this.x + 15, y: this.y + 15,
+          vx: this.vx > 0 ? 6.5 : -6.5,
+          vy: 0,
+          w: 16, h: 16,
+          color: '#a0e6ff',
+          damage: 1,
+          life: 130
+        });
+        audio.freeze();
+      }
+
+      if (boxCollide(this, player)) {
+        if (player.vy > 0 && player.y + player.h < this.y + 20) {
+          this.takeDamage(1);
+          player.vy = -10;
+        } else {
+          player.takeDamage(1, false, "Frozen by Helios");
+        }
+      }
+    },
+    takeDamage(amount) {
+      if (this.invulnerable > 0) return;
+      this.hp -= amount;
+      this.invulnerable = 25;
+      audio.bossHit();
+      updateBossHealthUI();
+      if (this.hp <= 0) {
+        level.boss2 = null;
+        updateBossHealthUI();
+        checkFinalVictory();
+      }
+    },
+    draw() {
+      if (this.invulnerable % 6 > 3) return;
+      ctx.save();
+      ctx.translate(this.x - camera.x, this.y - camera.y);
+      ctx.fillStyle = '#ffea00';
+      ctx.fillRect(0, 0, this.w, this.h);
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(8, 8, this.w - 16, this.h - 16);
+      ctx.restore();
+    }
+  };
+}
+
+// Verification for Both Split Bosses Dead
+function checkFinalVictory() {
+  if (!level.boss && !level.boss2 && !level.victoryTriggered) {
+    level.victoryTriggered = true;
+    saveState.quests.atticus_helios = true;
+    if (!saveState.unlockedHeroes.includes('atticus')) saveState.unlockedHeroes.push('atticus');
+    if (!saveState.unlockedHeroes.includes('helios')) saveState.unlockedHeroes.push('helios');
+
+    if (isCleanRun) {
+      saveState.wins += 1;
+      saveState.leaderboard.unshift({
+        name: "Grand Champion",
+        wins: saveState.wins,
+        score: score
+      });
+    }
+    if (score > saveState.bestScore) saveState.bestScore = score;
+    persistData();
+
+    triggerCutscene("MULTIVERSE UNIFIED!", "Both avatars have been eradicated. You have conquered the entire Multiverse!", () => {
+      victory();
+    });
+  }
+}
+
+function updateBossHealthUI() {
+  if (level.boss) {
+    const pct = Math.max(0, (level.boss.hp / level.boss.maxHp) * 100);
+    document.getElementById('boss-health-bar').style.width = pct + '%';
+  } else {
+    document.getElementById('boss-health-bar').style.width = '0%';
+  }
+  if (level.boss2) {
+    const pct2 = Math.max(0, (level.boss2.hp / level.boss2.maxHp) * 100);
+    document.getElementById('boss2-health-bar').style.width = pct2 + '%';
+  } else {
+    document.getElementById('boss2-health-bar').style.width = '0%';
+  }
+}
+
+// Particle & Text Utilities
+function addSparkles(x, y, color, count = 8) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 6,
+      vy: (Math.random() - 0.5) * 6,
+      color,
+      size: Math.random() * 4 + 2,
+      life: 1
+    });
+  }
+}
+
+function addFloatingText(x, y, text) {
+  floatingTexts.push({ x, y, text, life: 1, vy: -1.2 });
+}
+
+// Main Frame Update
+function update() {
+  if (gameState !== 'PLAYING') return;
+
+  player.update();
+
+  if (distortionTimer > 0) distortionTimer--;
+
+  // Platforms
+  for (let plat of level.platforms) {
+    if (plat.type === 'moving') {
+      plat.x += plat.speed * plat.dir;
+      if (plat.x > plat.origX + plat.range || plat.x < plat.origX) plat.dir *= -1;
+    } else if (plat.type === 'disappearing' && plat.touched) {
+      plat.timer--;
+      if (plat.timer <= 0) {
+        plat.active = false;
+        if (plat.timer < -140) {
+          plat.active = true;
+          plat.touched = false;
+          plat.timer = 0;
+        }
+      }
+    }
+  }
+
+  // Checkpoints
+  for (let cp of level.checkpoints) {
+    if (!cp.active && boxCollide(player, cp)) {
+      cp.active = true;
+      player.respawnX = cp.x;
+      player.respawnY = cp.y;
+      audio.coin();
+      addFloatingText(cp.x, cp.y - 15, "CHECKPOINT ACTIVE");
+      addSparkles(cp.x, cp.y, '#39ff14', 10);
+    }
+  }
+
+  // Collectibles
+  for (let col of level.collectibles) {
+    if (!col.collected && boxCollide(player, col)) {
+      col.collected = true;
+      score += 60;
+      totalOrbs++;
+      audio.coin();
+      addSparkles(col.x, col.y, col.color, 8);
+      updateHud();
+    }
+  }
+
+  // Medkits & 2-Block Stools
+  for (let pw of level.powerups) {
+    if (!pw.collected && boxCollide(player, pw)) {
+      pw.collected = true;
+      audio.powerup();
+      if (pw.type === 'stool') {
+        player.growthTimer = 420;
+        addFloatingText(player.x, player.y - 20, "2-BLOCK STOOL BOOST!");
+      } else {
+        player.hp = Math.min(player.maxHp, player.hp + 2);
+        addFloatingText(player.x, player.y - 20, "MEDKIT (+2 HP)!");
+      }
+      updateHud();
+    }
+  }
+
+  // Enemies Update
+  let newEnemies = [];
+  for (let e of level.enemies) {
+    if (!e.alive) continue;
+
+    if (e.frozenTimer > 0) {
+      e.frozenTimer--;
+      continue;
+    }
+
+    e.timer++;
+
+    if (e.type === 'drone') {
+      if (Math.abs(e.x - player.x) < 220) {
+        if (currentWorld === 2 && !level.megaMechAlerted) {
+          level.megaMechAlerted = true;
+          newEnemies.push(createEnemy('mega_mech', e.x + 150, 370, e.x - 200, e.x + 300));
+          addFloatingText(e.x, e.y - 20, "MEGA MECH ALERTED!");
+        }
+      }
+      if (e.vertical) {
+        e.y += e.vy;
+        if (e.y > e.maxY || e.y < e.minY) e.vy *= -1;
+      } else {
+        e.x += e.vx;
+        if (e.x > e.maxX || e.x < e.minX) e.vx *= -1;
+      }
+    } else if (e.type === 'ghoul') {
+      e.invis = (e.timer % 120 < 45);
+      e.x += e.vx;
+      if (e.x > e.maxX || e.x < e.minX) e.vx *= -1;
+    } else if (e.type === 'water_goblin') {
+      if (e.timer % 1800 === 0) {
+        projectiles.push({
+          x: e.x, y: e.y + 10,
+          vx: player.x < e.x ? -4 : 4,
+          vy: 0,
+          w: 12, h: 12,
+          color: '#39ff14',
+          damage: 1,
+          life: 140
+        });
+      }
+      e.x += e.vx;
+      if (e.x > e.maxX || e.x < e.minX) e.vx *= -1;
+    } else if (e.type === 'static_soul') {
+      if (e.timer % 2100 === 0) {
+        distortionTimer = 180;
+        addFloatingText(e.x, e.y - 15, "STATIC WAVE!");
+      }
+      e.x += e.vx;
+      if (e.x > e.maxX || e.x < e.minX) e.vx *= -1;
+    } else if (e.type === 'ashinaga') {
+      if (e.timer % 240 === 0) {
+        projectiles.push({
+          x: e.x, y: e.y + 10,
+          vx: player.x < e.x ? -3.5 : 3.5,
+          vy: -1,
+          w: 10, h: 10,
+          color: '#a0e6ff',
+          damage: 1,
+          life: 140
+        });
+      }
+      e.x += e.vx;
+      if (e.x > e.maxX || e.x < e.minX) e.vx *= -1;
+    } else {
+      e.x += e.vx;
+      if (e.x > e.maxX || e.x < e.minX) e.vx *= -1;
+    }
+
+    if (boxCollide(player, e)) {
+      if (player.vy > 0 && player.y + player.h < e.y + 18) {
+        e.hp--;
+        if (e.hp <= 0) {
+          e.alive = false;
+          score += 120;
+          audio.stomp();
+          addSparkles(e.x + e.w/2, e.y + e.h/2, '#fff', 12);
+
+          if (e.type === 'flesh_giant') {
+            newEnemies.push({
+              type: 'flesh_mini',
+              x: e.x - 10, y: e.y,
+              w: 16, h: 20,
+              vx: -2.4, vy: 0,
+              minX: e.minX, maxX: e.maxX,
+              alive: true, hp: 1, timer: 0
+            });
+            newEnemies.push({
+              type: 'flesh_mini',
+              x: e.x + 10, y: e.y,
+              w: 16, h: 20,
+              vx: 2.4, vy: 0,
+              minX: e.minX, maxX: e.maxX,
+              alive: true, hp: 1, timer: 0
+            });
+            addFloatingText(e.x, e.y - 15, "FLESH GIANT SPLIT!");
+          }
+        }
+        player.vy = -9.5;
+        updateHud();
+      } else {
+        player.takeDamage(1, false, `Slain by ${e.type}`);
+      }
+    }
+  }
+  if (newEnemies.length > 0) level.enemies.push(...newEnemies);
+
+  // Phantoms
+  for (let i = playerPhantoms.length - 1; i >= 0; i--) {
+    let ph = playerPhantoms[i];
+    ph.x += ph.vx;
+    ph.life--;
+    for (let e of level.enemies) {
+      if (e.alive && boxCollide(ph, e)) {
+        e.alive = false;
+        ph.life = 0;
+        addSparkles(e.x, e.y, '#ff0055', 10);
+      }
+    }
+    if (ph.life <= 0) playerPhantoms.splice(i, 1);
+  }
+
+  // Projectiles
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    let p = projectiles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+
+    if (p.friendly) {
+      for (let e of level.enemies) {
+        if (e.alive && boxCollide(p, e)) {
+          e.alive = false;
+          p.life = 0;
+          score += 100;
+          addSparkles(e.x, e.y, '#ffd700', 10);
+        }
+      }
+      if (level.boss && boxCollide(p, level.boss)) {
+        level.boss.takeDamage(p.damage || 1);
+        p.life = 0;
+      }
+      if (level.boss2 && boxCollide(p, level.boss2)) {
+        level.boss2.takeDamage(p.damage || 1);
+        p.life = 0;
+      }
+    } else {
+      if (boxCollide(p, player)) {
+        player.takeDamage(p.damage || 1, false, "Struck by projectile");
+        p.life = 0;
+      }
+    }
+    if (p.life <= 0) projectiles.splice(i, 1);
+  }
+
+  // Boss Updates
+  if (level.boss) level.boss.update();
+  if (level.boss2) level.boss2.update();
+
+  // Portal Interaction & Glacier Quest
+  if (level.portal && boxCollide(player, level.portal)) {
+    if (currentWorld === 9) saveState.world9Completed = true;
+    if (currentWorld === 10) saveState.world10Completed = true;
+
+    if (saveState.world9Completed && saveState.world10Completed && !saveState.quests.tundra_ruins) {
+      saveState.quests.tundra_ruins = true;
+      if (!saveState.unlockedHeroes.includes('glacier')) saveState.unlockedHeroes.push('glacier');
+      persistData();
+      addFloatingText(player.x, player.y - 30, "HERO GLACIER UNLOCKED!");
+    }
+
+    triggerPortalWarp(level.portal.targetWorld);
+  }
+
+  // Camera Follow
+  camera.x += (player.x - camera.x - VIEW_W / 3) * 0.1;
+  camera.x = Math.max(0, Math.min(camera.x, level.width - VIEW_W));
+  camera.y += (player.y - camera.y - VIEW_H / 1.8) * 0.05;
+
+  // Compass
+  const portalX = level.portal ? level.portal.x : level.width;
+  const distRatio = Math.max(0, Math.min(1, player.x / portalX));
+  document.getElementById('compass-marker').style.left = (distRatio * 100) + '%';
+  document.getElementById('compass-text').textContent = `PORTAL DISTANCE: ${Math.round((1 - distRatio) * 100)}%`;
+
+  // Particles & Floating Text
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    let ft = floatingTexts[i];
+    ft.y += ft.vy;
+    ft.life -= 0.02;
+    if (ft.life <= 0) floatingTexts.splice(i, 1);
+  }
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let pt = particles[i];
+    pt.x += pt.vx;
+    pt.y += pt.vy;
+    pt.life -= 0.03;
+    if (pt.life <= 0) particles.splice(i, 1);
+  }
+}
+
+// Warp Transition
+function triggerPortalWarp(targetWorld) {
+  gameState = 'WARPING';
+  audio.portal();
+  const screen = document.getElementById('portal-screen');
+  document.getElementById('portal-warp-title').textContent = `ENTERING WORLD ${targetWorld}: ${WORLD_CONFIGS[targetWorld].name.toUpperCase()}`;
+  screen.style.opacity = '1';
+
+  if (targetWorld > saveState.highestWorld) {
+    saveState.highestWorld = targetWorld;
+    persistData();
+  }
+
+  setTimeout(() => {
+    buildWorld(targetWorld);
+    screen.style.opacity = '0';
+    gameState = 'PLAYING';
+  }, 700);
+}
+
+// Cutscene Overlay with smooth gameState resume
+function triggerCutscene(speaker, text, callback) {
+  gameState = 'CUTSCENE';
+  const screen = document.getElementById('cutscene-screen');
+  document.getElementById('cutscene-speaker').textContent = speaker;
+  document.getElementById('cutscene-text').textContent = `"${text}"`;
+  screen.classList.remove('hidden');
+
+  document.getElementById('btn-skip-cutscene').onclick = () => {
+    screen.classList.add('hidden');
+    gameState = 'PLAYING';
+    if (callback) callback();
+  };
+}
+
+// Draw Frame
+function draw() {
+  const cfg = WORLD_CONFIGS[currentWorld];
+
+  const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+  grad.addColorStop(0, cfg.bg1);
+  grad.addColorStop(1, cfg.bg2);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  // Parallax Stars
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+  for (let i = 0; i < 25; i++) {
+    const sx = (i * 110 - camera.x * 0.15) % VIEW_W;
+    const sy = (i * 41) % (VIEW_H - 120);
+    ctx.fillRect(sx < 0 ? sx + VIEW_W : sx, sy, 2, 2);
+  }
+
+  // Ruins Architecture for World 10
+  if (cfg.ruinsTheme) {
+    ctx.fillStyle = '#3e2723';
+    for (let r = 0; r < 6; r++) {
+      const rx = (r * 320 - camera.x * 0.3) % VIEW_W;
+      ctx.fillRect(rx < 0 ? rx + VIEW_W : rx, 180, 44, 140);
+    }
+  }
+
+  // Platforms
+  for (let plat of level.platforms) {
+    if (plat.active === false) continue;
+    ctx.save();
+    ctx.translate(plat.x - camera.x, plat.y - camera.y);
+
+    ctx.fillStyle = cfg.groundColor;
+    ctx.fillRect(0, 0, plat.w, 7);
+    ctx.fillStyle = cfg.dirtColor;
+    ctx.fillRect(0, 7, plat.w, plat.h - 7);
+    ctx.restore();
+  }
+
+  // Graves (World 8)
+  for (let g of level.graves) {
+    ctx.save();
+    ctx.translate(g.x - camera.x, g.y - camera.y);
+    ctx.fillStyle = '#616161';
+    ctx.fillRect(0, 0, g.w, g.h);
+    ctx.fillStyle = '#39ff14';
+    ctx.fillRect(9, 4, 6, 6);
+    ctx.restore();
+  }
+
+  // Checkpoints
+  for (let cp of level.checkpoints) {
+    ctx.save();
+    ctx.translate(cp.x - camera.x, cp.y - camera.y);
+    ctx.fillStyle = '#666';
+    ctx.fillRect(2, 0, 4, cp.h);
+    ctx.fillStyle = cp.active ? '#39ff14' : '#ff0055';
+    ctx.fillRect(6, 2, 14, 10);
+    ctx.restore();
+  }
+
+  // Collectibles
+  for (let col of level.collectibles) {
+    if (col.collected) continue;
+    ctx.save();
+    ctx.translate(col.x - camera.x, col.y - camera.y);
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = col.color;
+    ctx.fillStyle = col.color;
+    ctx.beginPath();
+    ctx.arc(7, 7, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Powerups (Medkits / 2-Block Stools)
+  for (let pw of level.powerups) {
+    if (pw.collected) continue;
+    ctx.save();
+    ctx.translate(pw.x - camera.x, pw.y - camera.y);
+    if (pw.type === 'stool') {
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(0, 0, pw.w, 8);
+      ctx.fillStyle = '#ff8800';
+      ctx.fillRect(4, 8, 4, 10);
+      ctx.fillRect(pw.w - 8, 8, 4, 10);
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, pw.w, pw.h);
+      ctx.fillStyle = '#ff0055';
+      ctx.fillRect(6, 2, 6, 14);
+      ctx.fillRect(2, 6, 14, 6);
+    }
+    ctx.restore();
+  }
+
+  // Enemies
+  for (let e of level.enemies) {
+    if (!e.alive || e.invis) continue;
+    drawDetailedEnemy(e);
+  }
+
+  // Phantoms
+  for (let ph of playerPhantoms) {
+    ctx.save();
+    ctx.translate(ph.x - camera.x, ph.y - camera.y);
+    ctx.fillStyle = '#ff0055';
+    ctx.fillRect(2, 2, ph.w - 4, ph.h - 4);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(6, 6, 4, 4);
+    ctx.restore();
+  }
+
+  // Projectiles
+  for (let p of projectiles) {
+    ctx.save();
+    ctx.translate(p.x - camera.x, p.y - camera.y);
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = p.color;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(0, 0, p.w, p.h);
+    ctx.restore();
+  }
+
+  // Portal
+  if (level.portal) {
+    ctx.save();
+    ctx.translate(level.portal.x - camera.x, level.portal.y - camera.y);
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(0, 0, level.portal.w, level.portal.h);
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.35)';
+    ctx.fillRect(2, 2, level.portal.w - 4, level.portal.h - 4);
+    ctx.restore();
+  }
+
+  // Bosses
+  if (level.boss) level.boss.draw();
+  if (level.boss2) level.boss2.draw();
+
+  // Player
+  player.draw();
+
+  // Particles
+  for (let p of particles) {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - camera.x, p.y - camera.y, p.size, p.size);
+    ctx.restore();
+  }
+
+  // Floating text
+  for (let ft of floatingTexts) {
+    ctx.save();
+    ctx.globalAlpha = ft.life;
+    ctx.font = '8px "Press Start 2P"';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(ft.text, ft.x - camera.x - 20, ft.y - camera.y);
+    ctx.restore();
+  }
+
+  // Fog & Static Distortions
+  if (cfg.fog) {
+    ctx.fillStyle = 'rgba(5, 5, 15, 0.45)';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  }
+  if (distortionTimer > 0) {
+    ctx.fillStyle = 'rgba(255, 0, 119, 0.25)';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  }
+}
+
+// Pixel Art Enemy Renderer
+function drawDetailedEnemy(e) {
+  ctx.save();
+  ctx.translate(e.x - camera.x, e.y - camera.y);
+
+  if (e.frozenTimer > 0) {
+    ctx.fillStyle = '#a0e6ff';
+    ctx.fillRect(-2, -2, e.w + 4, e.h + 4);
+  } else if (e.type === 'drone') {
+    ctx.fillStyle = '#5c007a';
+    ctx.fillRect(2, 4, e.w - 4, 16);
+    ctx.fillStyle = '#ff0055';
+    ctx.fillRect(6, 8, 4, 4);
+    ctx.fillRect(14, 8, 4, 4);
+    ctx.fillStyle = '#00f0ff';
+    ctx.fillRect(10, 14, 4, 4);
+  } else if (e.type === 'bodyguard') {
+    ctx.fillStyle = '#1c2833';
+    ctx.fillRect(4, 2, 16, 8);
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(6, 5, 12, 3);
+    ctx.fillStyle = '#2c3e50';
+    ctx.fillRect(2, 10, 20, 12);
+    ctx.fillStyle = '#111';
+    ctx.fillRect(4, 22, 6, 8);
+    ctx.fillRect(14, 22, 6, 8);
+  } else if (e.type === 'mech') {
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(2, 2, e.w - 4, e.h - 8);
+    ctx.fillStyle = '#ff1133';
+    ctx.fillRect(6, 6, 12, 4);
+    ctx.fillStyle = '#00f0ff';
+    ctx.fillRect(4, 16, 4, 8);
+    ctx.fillRect(e.w - 8, 16, 4, 8);
+  } else if (e.type === 'ghoul') {
+    ctx.fillStyle = '#1c052e';
+    ctx.fillRect(4, 0, 16, e.h);
+    ctx.fillStyle = '#b026ff';
+    ctx.fillRect(6, 4, 4, 4);
+    ctx.fillRect(14, 4, 4, 4);
+    ctx.fillStyle = '#ff0077';
+    ctx.fillRect(0, 18, 6, 6);
+    ctx.fillRect(e.w - 6, 18, 6, 6);
+  } else if (e.type === 'water_goblin') {
+    ctx.fillStyle = '#1b4332';
+    ctx.fillRect(2, 4, e.w - 4, e.h - 4);
+    ctx.fillStyle = '#39ff14';
+    ctx.fillRect(4, 8, 6, 4);
+    ctx.fillRect(14, 8, 6, 4);
+    ctx.fillStyle = '#74c69d';
+    ctx.fillRect(8, 18, 8, 6);
+  } else if (e.type === 'flesh_giant') {
+    ctx.fillStyle = '#800f2f';
+    ctx.fillRect(0, 0, e.w, e.h);
+    ctx.fillStyle = '#ff4d6d';
+    ctx.fillRect(6, 6, 6, 6);
+    ctx.fillRect(22, 6, 6, 6);
+    ctx.fillStyle = '#590d22';
+    ctx.fillRect(4, 20, e.w - 8, 12);
+  } else if (e.type === 'flesh_mini') {
+    ctx.fillStyle = '#c9184a';
+    ctx.fillRect(0, 0, e.w, e.h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(4, 4, 3, 3);
+    ctx.fillRect(9, 4, 3, 3);
+  } else if (e.type === 'skeleton') {
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(4, 0, 16, 12);
+    ctx.fillStyle = '#39ff14';
+    ctx.fillRect(6, 4, 3, 3);
+    ctx.fillRect(14, 4, 3, 3);
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(8, 12, 8, 10);
+    ctx.fillRect(4, 22, 5, 8);
+    ctx.fillRect(15, 22, 5, 8);
+  } else if (e.type === 'mega_mech') {
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(0, 0, e.w, e.h);
+    ctx.fillStyle = '#ff0055';
+    ctx.fillRect(6, 6, e.w - 12, 6);
+  } else {
+    ctx.fillStyle = '#e11d48';
+    ctx.fillRect(0, 0, e.w, e.h);
+  }
+  ctx.restore();
+}
+
+// Master Loop
+function mainLoop() {
+  update();
+  draw();
+  requestAnimationFrame(mainLoop);
+}
+requestAnimationFrame(mainLoop);
+
+// Input Listeners
+window.addEventListener('keydown', (e) => {
+  audio.init();
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+  if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = true;
+  if (e.code === 'KeyJ' || e.code === 'KeyK' || e.code === 'KeyL' || e.code === 'KeyU') player.useAbility();
+  if (e.code === 'KeyP') togglePause();
+});
+
+window.addEventListener('keyup', (e) => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+  if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = false;
+});
+
+function bindTouch(id, keyName) {
+  const btn = document.getElementById(id);
+  btn.addEventListener('touchstart', (e) => { e.preventDefault(); audio.init(); keys[keyName] = true; });
+  btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
+}
+bindTouch('touch-left', 'left');
+bindTouch('touch-right', 'right');
+bindTouch('touch-jump', 'up');
+
+document.getElementById('touch-ability').addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  player.useAbility();
+});
+
+if ('ontouchstart' in window) {
+  document.getElementById('touch-controls').style.display = 'flex';
+}
+
+// HUD & Cooldown Bars
+function updateHud() {
+  document.getElementById('hud-lives').textContent = lives;
+  document.getElementById('hud-hp').textContent = `${player.hp}/${player.maxHp}`;
+  document.getElementById('hud-orbs').textContent = totalOrbs;
+  document.getElementById('hud-world').textContent = `${currentWorld}`;
+  document.getElementById('hud-score').textContent = score;
+
+  const cfg = HEROES[player.heroKey];
+
+  if (saveState.isCreatorMode) {
+    document.getElementById('ability-cd-bar').style.width = '100%';
+    document.getElementById('ability-uses-label').textContent = '👑 NO CD (∞)';
+  } else if (cfg.cdMax > 0) {
+    const cdPct = Math.max(0, 1 - (player.abilityCdTimer / cfg.cdMax)) * 100;
+    document.getElementById('ability-cd-bar').style.width = cdPct + '%';
+
+    if (player.heroKey === 'glacier') {
+      document.getElementById('ability-uses-label').textContent = `${saveState.glacierRunUsesLeft}/20 USES`;
+    } else if (player.heroKey === 'atticus') {
+      document.getElementById('ability-uses-label').textContent = `${10 - player.phantomsSummonedThisWorld}/10 LEFT`;
+    } else if (player.heroKey === 'helios') {
+      document.getElementById('ability-uses-label').textContent = `${5 - player.sunsSummonedThisWorld}/5 LEFT`;
+    } else {
+      document.getElementById('ability-uses-label').textContent = player.abilityCdTimer === 0 ? "READY" : `${Math.ceil(player.abilityCdTimer / 60)}s`;
+    }
+  } else {
+    document.getElementById('ability-cd-bar').style.width = '100%';
+    document.getElementById('ability-uses-label').textContent = "PASSIVE";
+  }
+}
+
+function updateMenuDisplays() {
+  document.getElementById('title-stats-display').innerHTML = `
+    <span>WINS: ${saveState.wins}</span> | 
+    <span>HIGH W: ${saveState.highestWorld}</span> | 
+    <span>HEROES: ${saveState.unlockedHeroes.length}/6</span>
+  `;
+}
+
+function startCampaign(startWorld = 1) {
+  audio.init();
+  lives = HEROES[saveState.selectedHero].lives;
+  score = 0;
+  totalOrbs = 0;
+  isCleanRun = (startWorld === 1);
+  player.initHero(saveState.selectedHero);
+  hideAllScreens();
+  document.getElementById('ui-layer').classList.remove('hidden');
+  buildWorld(startWorld);
+  gameState = 'PLAYING';
+}
+
+function togglePause() {
+  if (gameState === 'PLAYING') {
+    gameState = 'PAUSED';
+    document.getElementById('screen-pause').classList.remove('hidden');
+  } else if (gameState === 'PAUSED') {
+    gameState = 'PLAYING';
+    document.getElementById('screen-pause').classList.add('hidden');
+  }
+}
+
+function gameOver(cause) {
+  gameState = 'GAMEOVER';
+  document.getElementById('gameover-desc').textContent = `Defeated in World ${currentWorld}: ${cause}`;
+  document.getElementById('screen-gameover').classList.remove('hidden');
+}
+
+function victory() {
+  gameState = 'VICTORY';
+  audio.win();
+  document.getElementById('victory-final-score').textContent = score;
+  document.getElementById('victory-final-orbs').textContent = totalOrbs;
+  document.getElementById('victory-final-wins').textContent = saveState.wins;
+  document.getElementById('screen-victory').classList.remove('hidden');
+}
+
+function hideAllScreens() {
+  document.querySelectorAll('.screen-overlay').forEach(el => el.classList.add('hidden'));
+}
+
+// Menu Screen Renderers
+function renderHeroSelection() {
+  const container = document.getElementById('hero-list-container');
+  container.innerHTML = '';
+  Object.keys(HEROES).forEach(k => {
+    const h = HEROES[k];
+    const unlocked = saveState.unlockedHeroes.includes(k);
+    const card = document.createElement('div');
+    card.className = `card-item ${!unlocked ? 'locked' : ''} ${saveState.selectedHero === k ? 'selected' : ''}`;
+    card.innerHTML = `
+      <h4>${h.name} ${!unlocked ? '🔒' : ''}</h4>
+      <p><b>${h.title}</b></p>
+      <p>${h.desc}</p>
+    `;
+    if (unlocked) {
+      card.onclick = () => {
+        saveState.selectedHero = k;
+        persistData();
+        renderHeroSelection();
+      };
+    }
+    container.appendChild(card);
+  });
+}
+
+function renderWorldSelection() {
+  const container = document.getElementById('world-list-container');
+  container.innerHTML = '';
+  for (let w = 1; w <= 12; w++) {
+    const unlocked = w <= saveState.highestWorld;
+    const card = document.createElement('div');
+    card.className = `card-item ${!unlocked ? 'locked' : ''}`;
+    card.innerHTML = `
+      <h4>W${w}: ${WORLD_CONFIGS[w].name} ${!unlocked ? '🔒' : ''}</h4>
+      <p>${unlocked ? 'Dimensional breach open.' : 'Locked dimension.'}</p>
+    `;
+    if (unlocked) card.onclick = () => startCampaign(w);
+    container.appendChild(card);
+  }
+}
+
+function renderQuestScreen() {
+  const container = document.getElementById('quest-list-container');
+  container.innerHTML = '';
+  const questData = [
+    { name: "Defeat Kronos (World 4)", reward: "Unlock Kronell (Time Commander)", done: saveState.quests.kronos },
+    { name: "Defeat Necrowler (World 8)", reward: "Unlock Necrowler Shade (Crypt Reaper)", done: saveState.quests.necrowler },
+    { name: "Complete World 9 & World 10", reward: "Unlock Glacier (Frost Weaver)", done: saveState.quests.tundra_ruins },
+    { name: "Defeat Atticus de Helios (World 12)", reward: "Unlock Atticus Hero & Helios Hero", done: saveState.quests.atticus_helios }
+  ];
+  questData.forEach(q => {
+    const card = document.createElement('div');
+    card.className = `card-item ${q.done ? 'selected' : ''}`;
+    card.innerHTML = `
+      <h4>${q.name} - [${q.done ? 'COMPLETED ✅' : 'IN PROGRESS ⏳'}]</h4>
+      <p>Reward: <b>${q.reward}</b></p>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderLeaderboard() {
+  const container = document.getElementById('leaderboard-container');
+  container.innerHTML = '';
+  saveState.leaderboard.sort((a, b) => b.wins - a.wins || b.score - a.score);
+  saveState.leaderboard.slice(0, 5).forEach((entry, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card-item';
+    card.innerHTML = `
+      <h4>#${idx + 1} ${entry.name}</h4>
+      <p>Multiverse Wins: <b>${entry.wins}</b> | Score: <b>${entry.score}</b></p>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Menu Click Bindings
+document.getElementById('btn-start').onclick = () => startCampaign(1);
+document.getElementById('btn-heroes').onclick = () => {
+  hideAllScreens();
+  renderHeroSelection();
+  document.getElementById('screen-heroes').classList.remove('hidden');
+};
+document.getElementById('btn-heroes-back').onclick = () => {
+  hideAllScreens();
+  document.getElementById('screen-menu').classList.remove('hidden');
+};
+document.getElementById('btn-worlds').onclick = () => {
+  hideAllScreens();
+  renderWorldSelection();
+  document.getElementById('screen-select').classList.remove('hidden');
+};
+document.getElementById('btn-select-back').onclick = () => {
+  hideAllScreens();
+  document.getElementById('screen-menu').classList.remove('hidden');
+};
+document.getElementById('btn-quests').onclick = () => {
+  hideAllScreens();
+  renderQuestScreen();
+  document.getElementById('screen-quests').classList.remove('hidden');
+};
+document.getElementById('btn-quests-back').onclick = () => {
+  hideAllScreens();
+  document.getElementById('screen-menu').classList.remove('hidden');
+};
+document.getElementById('btn-leaderboard').onclick = () => {
+  hideAllScreens();
+  renderLeaderboard();
+  document.getElementById('screen-leaderboard').classList.remove('hidden');
+};
+document.getElementById('btn-leaderboard-back').onclick = () => {
+  hideAllScreens();
+  document.getElementById('screen-menu').classList.remove('hidden');
+};
+document.getElementById('btn-how').onclick = () => {
+  hideAllScreens();
+  document.getElementById('screen-how').classList.remove('hidden');
+};
+document.getElementById('btn-how-back').onclick = () => {
+  hideAllScreens();
+  document.getElementById('screen-menu').classList.remove('hidden');
+};
+
+// Creator Auth
+document.getElementById('btn-creator').onclick = () => {
+  hideAllScreens();
+  document.getElementById('creator-pass').value = '';
+  document.getElementById('creator-msg').textContent = '';
+  document.getElementById('screen-creator').classList.remove('hidden');
+};
+document.getElementById('btn-creator-back').onclick = () => {
+  hideAllScreens();
+  document.getElementById('screen-menu').classList.remove('hidden');
+};
+document.getElementById('btn-creator-submit').onclick = () => {
+  const enteredPass = document.getElementById('creator-pass').value;
+  if (enteredPass === "sss!") {
+    saveState.isCreatorMode = true;
+    saveState.unlockedHeroes = Object.keys(HEROES);
+    saveState.highestWorld = 12;
+    saveState.quests.kronos = true;
+    saveState.quests.necrowler = true;
+    saveState.quests.tundra_ruins = true;
+    saveState.quests.atticus_helios = true;
+    persistData();
+
+    audio.powerup();
+    document.getElementById('creator-msg').style.color = 'var(--neon-green)';
+    document.getElementById('creator-msg').textContent = "ACCESS GRANTED! ALL UNLOCKED & COOLDOWNS DISABLED.";
+    setTimeout(() => {
+      hideAllScreens();
+      document.getElementById('screen-menu').classList.remove('hidden');
+    }, 1200);
+  } else {
+    audio.hit();
+    document.getElementById('creator-msg').style.color = 'var(--neon-pink)';
+    document.getElementById('creator-msg').textContent = "INVALID PASSCODE. ACCESS DENIED.";
+  }
+};
+
+document.getElementById('btn-pause').onclick = togglePause;
+document.getElementById('btn-resume').onclick = togglePause;
+document.getElementById('btn-restart').onclick = () => {
+  hideAllScreens();
+  buildWorld(currentWorld);
+  gameState = 'PLAYING';
+};
+document.getElementById('btn-menu').onclick = () => {
+  hideAllScreens();
+  document.getElementById('ui-layer').classList.add('hidden');
+  document.getElementById('screen-menu').classList.remove('hidden');
+  updateMenuDisplays();
+  gameState = 'MENU';
+};
+document.getElementById('btn-retry-dead').onclick = () => startCampaign(currentWorld);
+document.getElementById('btn-menu-dead').onclick = () => {
+  hideAllScreens();
+  document.getElementById('ui-layer').classList.add('hidden');
+  document.getElementById('screen-menu').classList.remove('hidden');
+  updateMenuDisplays();
+  gameState = 'MENU';
+};
+document.getElementById('btn-victory-play').onclick = () => startCampaign(1);
+document.getElementById('btn-victory-menu').onclick = () => {
+  hideAllScreens();
+  document.getElementById('ui-layer').classList.add('hidden');
+  document.getElementById('screen-menu').classList.remove('hidden');
+  updateMenuDisplays();
+  gameState = 'MENU';
+};
+document.getElementById('btn-sound').onclick = (e) => {
+  audio.enabled = !audio.enabled;
+  e.target.textContent = audio.enabled ? '🔊' : '🔇';
+};
+
+updateMenuDisplays();
+</script>
+</body>
+</html>
