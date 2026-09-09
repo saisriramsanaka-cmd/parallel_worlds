@@ -81,8 +81,3 @@ Every playable hero visually mirrors their respective boss or world counterpart:
 
 ---
 
-## 🚀 How to Run Locally
-
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/srija-ctrl/parallel-worlds.git](https://github.com/srija-ctrl/parallel-worlds.git)
